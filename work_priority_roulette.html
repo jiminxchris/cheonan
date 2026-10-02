@@ -1,0 +1,861 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>인선미 업무 우선순위 룰렛</title>
+  <style>
+    :root{
+      --bg:#f7f5ff;
+      --surface:#ffffff;
+      --surface-2:#fbfaff;
+      --text:#2b2540;
+      --muted:#7a7394;
+      --purple:#7c3aed;
+      --purple-2:#8b5cf6;
+      --purple-3:#a78bfa;
+      --purple-4:#ede9fe;
+      --line:#e9e4f7;
+      --good:#5b21b6;
+      --shadow:0 10px 30px rgba(87, 56, 154, .10);
+      --radius:18px;
+    }
+
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family: Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at 10% 0%, rgba(167,139,250,.18), transparent 28%),
+        radial-gradient(circle at 100% 0%, rgba(124,58,237,.10), transparent 25%),
+        var(--bg);
+      color:var(--text);
+    }
+
+    .app{
+      width:min(1180px, calc(100% - 28px));
+      margin:0 auto;
+      padding:34px 0 56px;
+    }
+
+    .hero{
+      display:flex;
+      gap:22px;
+      justify-content:space-between;
+      align-items:flex-end;
+      margin-bottom:24px;
+    }
+
+    .hero h1{
+      margin:0;
+      font-size:clamp(28px, 5vw, 44px);
+      letter-spacing:-.04em;
+      line-height:1.08;
+    }
+
+    .hero h1 span{
+      color:var(--purple);
+    }
+
+    .hero p{
+      margin:10px 0 0;
+      color:var(--muted);
+      line-height:1.65;
+      max-width:680px;
+    }
+
+    .formula{
+      flex:0 0 auto;
+      background:rgba(255,255,255,.78);
+      border:1px solid rgba(124,58,237,.12);
+      box-shadow:var(--shadow);
+      backdrop-filter:blur(12px);
+      border-radius:16px;
+      padding:14px 16px;
+      font-size:14px;
+      color:var(--muted);
+      white-space:nowrap;
+    }
+
+    .formula strong{color:var(--purple)}
+
+    .layout{
+      display:grid;
+      grid-template-columns:minmax(0,1.18fr) minmax(360px,.82fr);
+      gap:22px;
+      align-items:start;
+    }
+
+    .panel{
+      background:var(--surface);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+
+    .panel-head{
+      padding:20px 22px;
+      border-bottom:1px solid var(--line);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      background:linear-gradient(180deg,#fff, #fdfcff);
+    }
+
+    .panel-head h2{
+      margin:0;
+      font-size:18px;
+      letter-spacing:-.02em;
+    }
+
+    .panel-head small{
+      color:var(--muted);
+      font-size:12px;
+    }
+
+    .tasks{
+      padding:18px;
+      display:grid;
+      gap:14px;
+    }
+
+    .task-card{
+      border:1px solid var(--line);
+      background:var(--surface-2);
+      border-radius:16px;
+      padding:16px;
+      transition:.2s ease;
+    }
+
+    .task-card:hover{
+      transform:translateY(-2px);
+      border-color:#d9cff7;
+      box-shadow:0 8px 22px rgba(91,33,182,.07);
+    }
+
+    .task-card.inactive{
+      opacity:.58;
+    }
+
+    .task-top{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin-bottom:14px;
+    }
+
+    .number{
+      width:30px;
+      height:30px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      font-weight:800;
+      color:var(--purple);
+      background:var(--purple-4);
+      flex:0 0 auto;
+    }
+
+    .task-name{
+      flex:1;
+      min-width:0;
+      border:1px solid var(--line);
+      border-radius:11px;
+      padding:10px 12px;
+      font-size:15px;
+      outline:none;
+      background:#fff;
+      color:var(--text);
+      transition:.2s;
+    }
+
+    .task-name:focus{
+      border-color:var(--purple-3);
+      box-shadow:0 0 0 4px rgba(124,58,237,.08);
+    }
+
+    .toggle{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-size:12px;
+      color:var(--muted);
+      user-select:none;
+      cursor:pointer;
+    }
+
+    .toggle input{accent-color:var(--purple)}
+
+    .sliders{
+      display:grid;
+      grid-template-columns:repeat(3,1fr);
+      gap:12px;
+    }
+
+    .slider-box{
+      background:#fff;
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:11px 12px 10px;
+    }
+
+    .slider-label{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      font-size:12px;
+      color:var(--muted);
+      margin-bottom:8px;
+    }
+
+    .slider-label strong{
+      color:var(--purple);
+      font-size:13px;
+    }
+
+    input[type="range"]{
+      width:100%;
+      accent-color:var(--purple);
+      cursor:pointer;
+    }
+
+    .actions{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      padding:0 18px 18px;
+    }
+
+    button{
+      border:0;
+      border-radius:13px;
+      min-height:48px;
+      padding:0 16px;
+      font-weight:800;
+      font-size:14px;
+      cursor:pointer;
+      transition:.2s ease;
+    }
+
+    button:active{transform:scale(.98)}
+
+    .primary{
+      color:#fff;
+      background:linear-gradient(135deg, var(--purple), var(--purple-2));
+      box-shadow:0 10px 22px rgba(124,58,237,.22);
+    }
+
+    .primary:hover{filter:brightness(1.04); transform:translateY(-1px)}
+
+    .secondary{
+      color:var(--purple);
+      background:var(--purple-4);
+    }
+
+    .secondary:hover{background:#e7e0ff}
+
+    .result-wrap{
+      padding:18px;
+    }
+
+    .empty-state{
+      min-height:230px;
+      display:grid;
+      place-items:center;
+      text-align:center;
+      color:var(--muted);
+      border:1px dashed #d9cff7;
+      border-radius:14px;
+      background:linear-gradient(180deg,#fdfcff,#faf8ff);
+      padding:28px;
+    }
+
+    .empty-icon{
+      font-size:34px;
+      margin-bottom:8px;
+    }
+
+    .ranking{
+      display:grid;
+      gap:10px;
+    }
+
+    .rank-item{
+      padding:13px;
+      border:1px solid var(--line);
+      border-radius:14px;
+      background:#fff;
+      transition:.25s ease;
+      animation:fadeUp .4s ease both;
+    }
+
+    .rank-item.top{
+      border:2px solid var(--purple-2);
+      background:linear-gradient(135deg,#fbf9ff,#f3efff);
+      box-shadow:0 10px 24px rgba(124,58,237,.12);
+    }
+
+    .rank-line{
+      display:grid;
+      grid-template-columns:34px minmax(0,1fr) auto;
+      gap:10px;
+      align-items:center;
+      margin-bottom:10px;
+    }
+
+    .rank-badge{
+      width:34px;
+      height:34px;
+      display:grid;
+      place-items:center;
+      border-radius:10px;
+      background:var(--purple-4);
+      color:var(--purple);
+      font-weight:900;
+      font-size:13px;
+    }
+
+    .top .rank-badge{
+      color:#fff;
+      background:linear-gradient(135deg,var(--purple),var(--purple-2));
+    }
+
+    .rank-name{
+      font-weight:800;
+      overflow:hidden;
+      white-space:nowrap;
+      text-overflow:ellipsis;
+    }
+
+    .score{
+      font-weight:900;
+      color:var(--good);
+      font-size:15px;
+    }
+
+    .bar-track{
+      height:10px;
+      border-radius:999px;
+      overflow:hidden;
+      background:#eeeaf7;
+    }
+
+    .bar{
+      height:100%;
+      width:0;
+      background:linear-gradient(90deg,var(--purple-3),var(--purple));
+      border-radius:999px;
+      transition:width .8s cubic-bezier(.2,.8,.2,1);
+    }
+
+    .top-label{
+      margin-top:9px;
+      font-size:12px;
+      color:var(--purple);
+      font-weight:700;
+    }
+
+    .roulette-section{
+      margin-top:22px;
+      padding:22px;
+    }
+
+    .roulette-grid{
+      display:grid;
+      grid-template-columns:300px minmax(0,1fr);
+      gap:22px;
+      align-items:center;
+    }
+
+    .wheel-wrap{
+      position:relative;
+      width:280px;
+      height:280px;
+      margin:auto;
+    }
+
+    .pointer{
+      position:absolute;
+      z-index:4;
+      top:-8px;
+      left:50%;
+      transform:translateX(-50%);
+      width:0;
+      height:0;
+      border-left:15px solid transparent;
+      border-right:15px solid transparent;
+      border-top:0;
+      border-bottom:26px solid #4c1d95;
+      filter:drop-shadow(0 4px 5px rgba(76,29,149,.2));
+    }
+
+    .wheel{
+      width:100%;
+      height:100%;
+      border-radius:50%;
+      border:10px solid white;
+      box-shadow:0 12px 34px rgba(76,29,149,.18), inset 0 0 0 1px rgba(124,58,237,.08);
+      position:relative;
+      transition:transform 3.6s cubic-bezier(.15,.75,.12,1);
+      overflow:hidden;
+      background:conic-gradient(
+        #6d28d9 0deg 60deg,
+        #8b5cf6 60deg 120deg,
+        #a78bfa 120deg 180deg,
+        #7c3aed 180deg 240deg,
+        #c4b5fd 240deg 300deg,
+        #9333ea 300deg 360deg
+      );
+    }
+
+    .wheel::after{
+      content:"";
+      position:absolute;
+      inset:50%;
+      width:66px;
+      height:66px;
+      transform:translate(-50%,-50%);
+      border-radius:50%;
+      background:#fff;
+      border:7px solid #ede9fe;
+      box-shadow:0 3px 14px rgba(50,30,100,.13);
+    }
+
+    .wheel-label{
+      position:absolute;
+      left:50%;
+      top:50%;
+      width:96px;
+      margin-left:-48px;
+      transform-origin:48px 0;
+      color:#fff;
+      text-align:center;
+      font-size:11px;
+      line-height:1.2;
+      font-weight:800;
+      text-shadow:0 1px 3px rgba(0,0,0,.28);
+      pointer-events:none;
+      z-index:2;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+
+    .roulette-copy h3{
+      margin:0 0 8px;
+      font-size:22px;
+      letter-spacing:-.03em;
+    }
+
+    .roulette-copy p{
+      margin:0;
+      color:var(--muted);
+      line-height:1.65;
+      font-size:14px;
+    }
+
+    .roulette-btn{
+      margin-top:16px;
+      width:100%;
+    }
+
+    .picked{
+      margin-top:14px;
+      min-height:58px;
+      border-radius:14px;
+      background:#f7f3ff;
+      border:1px solid #e6def9;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:12px 16px;
+      font-weight:900;
+      color:var(--purple);
+    }
+
+    .notice{
+      margin-top:12px;
+      font-size:12px;
+      line-height:1.55;
+      color:#8c829f;
+      background:#faf8ff;
+      border-left:4px solid #c4b5fd;
+      padding:10px 12px;
+      border-radius:10px;
+    }
+
+    .legend{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .chip{
+      font-size:11px;
+      color:var(--purple);
+      background:var(--purple-4);
+      padding:6px 9px;
+      border-radius:999px;
+      font-weight:700;
+    }
+
+    @keyframes fadeUp{
+      from{opacity:0; transform:translateY(6px)}
+      to{opacity:1; transform:translateY(0)}
+    }
+
+    @media (max-width: 900px){
+      .hero{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+      .formula{white-space:normal}
+      .layout{grid-template-columns:1fr}
+      .roulette-grid{grid-template-columns:1fr}
+    }
+
+    @media (max-width: 640px){
+      .app{
+        width:min(100% - 18px, 1180px);
+        padding-top:20px;
+      }
+      .sliders{grid-template-columns:1fr}
+      .actions{grid-template-columns:1fr}
+      .panel-head{
+        align-items:flex-start;
+        flex-direction:column;
+      }
+      .wheel-wrap{
+        width:245px;
+        height:245px;
+      }
+
+      .wheel-label{
+        width:82px;
+        margin-left:-41px;
+        transform-origin:41px 0;
+        font-size:10px;
+      }
+      .roulette-section{padding:17px}
+    }
+  </style>
+</head>
+<body>
+  <main class="app">
+    <section class="hero">
+      <div>
+        <h1>인선미의 업무 우선순위 <span>룰렛</span></h1>
+        <p>
+          중요도·긴급도·영향도를 기준으로 업무 우선순위를 비교하고,
+          룰렛으로 오늘 먼저 살펴볼 업무도 가볍게 뽑아보세요.
+        </p>
+      </div>
+      <div class="formula">
+        <strong>점수 공식</strong><br />
+        중요도×40 + 긴급도×35 + 영향도×25 → 100점 환산
+      </div>
+    </section>
+
+    <section class="layout">
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>업무 후보 입력</h2>
+            <small>최대 6개 · 사용하지 않는 항목은 체크 해제</small>
+          </div>
+        </div>
+
+        <div class="tasks" id="tasks"></div>
+
+        <div class="actions">
+          <button class="primary" id="calcBtn">우선순위 계산</button>
+          <button class="secondary" id="resetBtn">예시값으로 초기화</button>
+        </div>
+      </section>
+
+      <aside class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>우선순위 결과</h2>
+            <small>점수와 순위를 한눈에 확인</small>
+          </div>
+        </div>
+        <div class="result-wrap" id="results">
+          <div class="empty-state">
+            <div>
+              <div class="empty-icon">📊</div>
+              <strong>아직 계산 전입니다</strong>
+              <div style="margin-top:6px;">왼쪽 값을 조정한 뒤<br />‘우선순위 계산’을 눌러보세요.</div>
+            </div>
+          </div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="panel roulette-section">
+      <div class="roulette-grid">
+        <div class="wheel-wrap">
+          <div class="pointer"></div>
+          <div class="wheel" id="wheel"></div>
+        </div>
+
+        <div class="roulette-copy">
+          <h3>오늘 먼저 볼 업무 뽑기 🎯</h3>
+          <p>
+            활성화된 업무 후보 중 하나를 무작위로 선택합니다.
+            회전 애니메이션이 끝나면 오늘 먼저 확인할 업무가 표시됩니다.
+          </p>
+
+          <div class="legend">
+            <span class="chip">업무 결정 보조</span>
+            <span class="chip">무작위 선택</span>
+            <span class="chip">재미 요소</span>
+          </div>
+
+          <button class="primary roulette-btn" id="spinBtn">오늘 먼저 볼 업무 뽑기</button>
+          <div class="picked" id="picked">룰렛을 돌려보세요!</div>
+
+          <div class="notice">
+            ※ 룰렛 결과는 재미를 위한 무작위 선택이며, 실제 업무 우선순위 판단 기준이 아닙니다.
+            최종 판단은 위의 우선순위 점수와 업무 상황을 함께 고려해 주세요.
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const defaults = [
+      "민원 안내 개선",
+      "공원 시설 점검",
+      "직원 디지털 교육",
+      "행사 준비",
+      "주차 민원 개선",
+      "추가 업무 후보"
+    ];
+
+    const tasksEl = document.getElementById("tasks");
+    const resultsEl = document.getElementById("results");
+    const calcBtn = document.getElementById("calcBtn");
+    const resetBtn = document.getElementById("resetBtn");
+    const spinBtn = document.getElementById("spinBtn");
+    const wheel = document.getElementById("wheel");
+    const picked = document.getElementById("picked");
+
+    let currentRotation = 0;
+    let spinning = false;
+
+    function taskCard(index, name){
+      const active = index < 5 ? "checked" : "";
+      return `
+        <div class="task-card ${index === 5 ? "inactive":""}" data-card="${index}">
+          <div class="task-top">
+            <div class="number">${index + 1}</div>
+            <input class="task-name" type="text" maxlength="40" value="${name}" aria-label="업무 ${index+1} 이름" />
+            <label class="toggle">
+              <input class="active-toggle" type="checkbox" ${active} />
+              사용
+            </label>
+          </div>
+
+          <div class="sliders">
+            ${sliderTemplate("중요도", "importance", 3)}
+            ${sliderTemplate("긴급도", "urgency", 3)}
+            ${sliderTemplate("영향도", "impact", 3)}
+          </div>
+        </div>
+      `;
+    }
+
+    function sliderTemplate(label, cls, value){
+      return `
+        <div class="slider-box">
+          <div class="slider-label">
+            <span>${label}</span>
+            <strong class="${cls}-value">${value}</strong>
+          </div>
+          <input type="range" min="1" max="5" value="${value}" class="${cls}" aria-label="${label}" />
+        </div>
+      `;
+    }
+
+    function renderTasks(){
+      tasksEl.innerHTML = defaults.map((name,i)=>taskCard(i,name)).join("");
+
+      document.querySelectorAll(".task-card").forEach(card=>{
+        const toggle = card.querySelector(".active-toggle");
+        toggle.addEventListener("change", ()=>{
+          card.classList.toggle("inactive", !toggle.checked);
+          updateWheel();
+        });
+
+        card.querySelectorAll('input[type="range"]').forEach(range=>{
+          range.addEventListener("input", ()=>{
+            const valueEl = card.querySelector(`.${range.className}-value`);
+            if(valueEl) valueEl.textContent = range.value;
+          });
+        });
+
+        card.querySelector(".task-name").addEventListener("input", updateWheel);
+      });
+
+      updateWheel();
+    }
+
+    function getActiveTasks(){
+      return [...document.querySelectorAll(".task-card")]
+        .filter(card => card.querySelector(".active-toggle").checked)
+        .map((card, index)=>{
+          const name = card.querySelector(".task-name").value.trim() || `업무 ${index+1}`;
+          const importance = Number(card.querySelector(".importance").value);
+          const urgency = Number(card.querySelector(".urgency").value);
+          const impact = Number(card.querySelector(".impact").value);
+
+          const raw = importance * 40 + urgency * 35 + impact * 25;
+          const score = Math.round((raw / 500) * 100);
+
+          return {name, importance, urgency, impact, score};
+        });
+    }
+
+    function calculate(){
+      const data = getActiveTasks();
+
+      if(!data.length){
+        resultsEl.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <div class="empty-icon">⚠️</div>
+              <strong>활성화된 업무가 없습니다</strong>
+              <div style="margin-top:6px;">최소 1개 이상의 업무를 ‘사용’으로 설정해 주세요.</div>
+            </div>
+          </div>`;
+        return;
+      }
+
+      const ranked = [...data].sort((a,b)=> b.score - a.score);
+
+      resultsEl.innerHTML = `
+        <div class="ranking">
+          ${ranked.map((item, i)=>`
+            <div class="rank-item ${i===0 ? "top":""}" style="animation-delay:${i*60}ms">
+              <div class="rank-line">
+                <div class="rank-badge">${i+1}위</div>
+                <div class="rank-name" title="${escapeHtml(item.name)}">${escapeHtml(item.name)}</div>
+                <div class="score">${item.score}점</div>
+              </div>
+              <div class="bar-track">
+                <div class="bar" data-width="${item.score}%"></div>
+              </div>
+              ${i===0 ? '<div class="top-label">✨ 현재 가장 높은 우선순위</div>' : ""}
+            </div>
+          `).join("")}
+        </div>
+      `;
+
+      requestAnimationFrame(()=>{
+        document.querySelectorAll(".bar").forEach(bar=>{
+          bar.style.width = bar.dataset.width;
+        });
+      });
+    }
+
+    function resetAll(){
+      renderTasks();
+      resultsEl.innerHTML = `
+        <div class="empty-state">
+          <div>
+            <div class="empty-icon">📊</div>
+            <strong>예시값으로 초기화했습니다</strong>
+            <div style="margin-top:6px;">필요한 값을 조정한 뒤 계산해 보세요.</div>
+          </div>
+        </div>
+      `;
+      picked.textContent = "룰렛을 돌려보세요!";
+      currentRotation = 0;
+      wheel.style.transition = "none";
+      wheel.style.transform = "rotate(0deg)";
+      setTimeout(()=>wheel.style.transition = "transform 3.6s cubic-bezier(.15,.75,.12,1)",50);
+    }
+
+    function updateWheel(){
+      const data = getActiveTasks();
+      const count = Math.max(data.length,1);
+      const slice = 360 / count;
+      const colors = ["#6d28d9","#8b5cf6","#a78bfa","#7c3aed","#c4b5fd","#9333ea"];
+
+      const gradients = [];
+      for(let i=0;i<count;i++){
+        gradients.push(`${colors[i % colors.length]} ${i*slice}deg ${(i+1)*slice}deg`);
+      }
+      wheel.style.background = `conic-gradient(${gradients.join(",")})`;
+
+      wheel.querySelectorAll(".wheel-label").forEach(el=>el.remove());
+
+      data.forEach((item,i)=>{
+        const label = document.createElement("div");
+        label.className = "wheel-label";
+        const angle = (i + .5) * slice;
+        label.style.transform = `rotate(${angle}deg) translateY(-82px) rotate(90deg)`;
+        label.textContent = truncate(item.name, 10);
+        label.title = item.name;
+        wheel.appendChild(label);
+      });
+    }
+
+    function spin(){
+      if(spinning) return;
+
+      const data = getActiveTasks();
+      if(!data.length){
+        picked.textContent = "활성화된 업무가 없습니다.";
+        return;
+      }
+
+      spinning = true;
+      spinBtn.disabled = true;
+      spinBtn.textContent = "회전 중...";
+
+      const selectedIndex = Math.floor(Math.random() * data.length);
+      const slice = 360 / data.length;
+
+      // 포인터가 12시 방향이므로 선택된 조각의 중앙이 0deg에 오도록 회전
+      const targetCenter = selectedIndex * slice + slice / 2;
+      const extraTurns = 5 + Math.floor(Math.random()*3);
+      const finalAngle = extraTurns * 360 + (360 - targetCenter);
+
+      currentRotation += finalAngle;
+      wheel.style.transform = `rotate(${currentRotation}deg)`;
+      picked.textContent = "두근두근...";
+
+      setTimeout(()=>{
+        picked.innerHTML = `🎉 오늘 먼저 볼 업무: <strong style="margin-left:6px;">${escapeHtml(data[selectedIndex].name)}</strong>`;
+        spinning = false;
+        spinBtn.disabled = false;
+        spinBtn.textContent = "한 번 더 뽑기";
+      }, 3650);
+    }
+
+    function truncate(str, len){
+      return str.length > len ? str.slice(0,len-1)+"…" : str;
+    }
+
+    function escapeHtml(text){
+      return String(text).replace(/[&<>"']/g, m => ({
+        "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+      }[m]));
+    }
+
+    calcBtn.addEventListener("click", calculate);
+    resetBtn.addEventListener("click", resetAll);
+    spinBtn.addEventListener("click", spin);
+
+    renderTasks();
+  </script>
+</body>
+</html>
